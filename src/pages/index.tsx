@@ -79,16 +79,16 @@ export default function Home() {
           address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
           abi: abi,
           functionName: 'SCALAR',
-        })) as bigint;
+        })) as number;
 
         console.log('scalar', scalar);
 
-        const claimAmount =
-          BigInt(_userClaimable) / (BigInt(10 ** decimals) * scalar);
+        const claimAmount = Number(_userClaimable) / 10 ** Number(decimals);
+        const scaledClaimAmount = claimAmount / Number(scalar);
 
-        setUserClaimable(Number(claimAmount));
+        setUserClaimable(scaledClaimAmount);
 
-        console.log('claimAmount', claimAmount);
+        console.log('claimAmount', scaledClaimAmount);
       }
     }
 
