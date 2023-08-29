@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Papa from 'papaparse';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -16,12 +16,13 @@ import {
 } from 'wagmi';
 import { readContract } from '@wagmi/core';
 import abi from '../abi/linear-unlock-abi.json';
-import tokenAbi from '../abi/erc20antiMev.json';
+import tokenAbi from '../abi/erc20.json';
 
 const Upload = () => {
   const [uploading, setUploading] = useState(false);
   const [csvData, setCsvData] = useState([]);
   const [writeData, setWriteData] = useState([]);
+  const [writeApproveData, setWriteApproveData] = useState([]);
   const inputRef = useRef();
 
   const handleUploadCSV = () => {
@@ -38,15 +39,40 @@ const Upload = () => {
       //@ts-ignore
       setCsvData(csv?.data);
 
-      console.log(csv);
+      console.log("csv", csv);
     };
 
     reader.readAsText(file);
     setUploading(false);
   };
 
+  ///////////////////
   const {
-    config,
+    config: approveConfig,
+    error: approvePrepareError,
+    isError: isApprovePrepareError,
+  } = usePrepareContractWrite({
+    address: process.env.NEXT_PUBLIC_TOKEN_ADDRESS,
+    abi: tokenAbi,
+    functionName: 'approve',
+    args: writeApproveData,
+  });
+
+  const {
+    data: approveTxData,
+    write: writeApprove,
+    error: approveError,
+    isError: isApproveError,
+  } = useContractWrite(approveConfig);
+
+  const { isLoading: isApproveLoading, isSuccess: isApproveSuccess } =
+    useWaitForTransaction({
+      hash: approveTxData?.hash,
+    });
+
+  ///////////////////
+  const {
+    config: addUsersConfig,
     error: prepareError,
     isError: isPrepareError,
   } = usePrepareContractWrite({
@@ -56,11 +82,18 @@ const Upload = () => {
     args: writeData,
   });
 
-  const { data, write, error, isError } = useContractWrite(config);
+  const {
+    data: addUsersTxData,
+    write,
+    error,
+    isError,
+  } = useContractWrite(addUsersConfig);
 
   const { isLoading, isSuccess } = useWaitForTransaction({
-    hash: data?.hash,
+    hash: addUsersTxData?.hash,
   });
+
+  ///////////////////
 
   const submitUsers = async () => {
     const decimals = (await readContract({
@@ -72,6 +105,7 @@ const Upload = () => {
     console.log('decimals', decimals);
 
     let _writeData = [];
+    let approveAmount = BigInt(0);
     csvData.forEach((d) => {
       let usrObj = {
         userAddress: '',
@@ -82,18 +116,36 @@ const Upload = () => {
       };
       usrObj.userAddress = d.userAddress;
       usrObj.claimable = BigInt(d.claimable) * BigInt(10 ** decimals);
+      approveAmount += usrObj.claimable;
       usrObj.endVestTimestamp = Date.now() + Number(d.vestMonths * 2592000);
       _writeData.push(usrObj);
     });
+
+    console.log("writeApproveData", [process.env.NEXT_PUBLIC_CONTRACT_ADDRESS, approveAmount]);
+    setWriteApproveData([
+      process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
+      approveAmount,
+    ]);
 
     let temp = [];
     temp.push(_writeData);
     setWriteData(temp);
 
-    write?.();
-
     console.log(writeData);
   };
+
+  useEffect(() => {
+    console.log('isApproveSuccess', isApproveSuccess);
+    if (isApproveSuccess) {
+      console.log('writing addUsers');
+      write?.();
+    }
+  }, [isApproveSuccess]);
+
+  useEffect(() => {
+    console.log("writing approve")
+    writeApprove?.();
+  }, [writeApproveData]);
 
   return (
     <div>
@@ -142,16 +194,16 @@ const Upload = () => {
         </TableContainer>
       )}
 
-      {isLoading ? (
+      {isLoading || isApproveLoading ? (
         <CircularProgress />
       ) : (
         <Button onClick={() => submitUsers()}>Submit Users</Button>
       )}
 
-      {(prepareError || error)?.message && (
+      {error?.message && (
         <Grid sx={{ maxWidth: 500 }}>
           <Typography sx={{ color: 'orangered', fontSize: 10 }}>
-            {(prepareError || error)?.message}
+            {error?.message}
           </Typography>
         </Grid>
       )}

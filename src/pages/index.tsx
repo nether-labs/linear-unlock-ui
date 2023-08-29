@@ -11,7 +11,7 @@ import {
 import abi from '../abi/linear-unlock-abi.json';
 import { useEffect, useState } from 'react';
 import UploadCSV from '../components/UploadCSV';
-import tokenAbi from '../abi/erc20antiMev.json';
+import tokenAbi from '../abi/erc20.json';
 
 type User = ['', 0, 0, 0, 0];
 
@@ -65,26 +65,30 @@ export default function Home() {
           args: [address],
         })) as number;
 
+        console.log('_userClaimable', _userClaimable);
+
         const decimals = (await readContract({
           address: process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`,
           abi: tokenAbi,
           functionName: 'decimals',
         })) as number;
 
+        console.log('decimals', decimals);
+
         const scalar = (await readContract({
           address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
           abi: abi,
           functionName: 'SCALAR',
-        })) as number;
+        })) as bigint;
 
-        console.log('userClaimable', _userClaimable);
+        console.log('scalar', scalar);
 
-        setUserClaimable(
-          Number(
-            BigInt(_userClaimable) /
-              (BigInt(10 ** decimals) * BigInt(10 ** scalar))
-          )
-        );
+        const claimAmount =
+          BigInt(_userClaimable) / (BigInt(10 ** decimals) * scalar);
+
+        setUserClaimable(Number(claimAmount));
+
+        console.log('claimAmount', claimAmount);
       }
     }
 
@@ -125,7 +129,12 @@ export default function Home() {
         direction='column'
         sx={{ p: 10 }}
       >
-        {address === owner && <Grid sx={{mb: 5}}> <UploadCSV /> </Grid>}
+        {address === owner && (
+          <Grid sx={{ mb: 5 }}>
+            {' '}
+            <UploadCSV />{' '}
+          </Grid>
+        )}
 
         <Grid item xs={12}>
           <Typography>Claimable: {Number(userClaimable)}</Typography>
