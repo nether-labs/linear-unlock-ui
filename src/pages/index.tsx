@@ -13,10 +13,12 @@ import { useEffect, useState } from 'react';
 import UploadCSV from '../components/UploadCSV';
 import tokenAbi from '../abi/erc20antiMev.json';
 
+type User = ['', 0, 0, 0, 0];
+
 export default function Home() {
   const { address, isConnecting, isDisconnected } = useAccount();
   const [owner, setOwner] = useState('');
-  const [userClaimable, setUserClaimable] = useState(BigInt(0));
+  const [userClaimable, setUserClaimable] = useState(0);
 
   const account = useAccount({
     onConnect({ address, connector, isReconnected }) {
@@ -28,37 +30,63 @@ export default function Home() {
   console.log('account', account);
 
   const readContractData = async () => {
-    console.log("NEXT_PUBLIC_CONTRACT_ADDRESS", process.env.NEXT_PUBLIC_CONTRACT_ADDRESS)
     const _owner = await readContract({
       address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
       abi: abi,
       functionName: 'owner',
     });
 
-    const _userClaimable = (await readContract({
+    console.log('_owner', _owner);
+
+    // const _startVestTimestamp = (await readContract({
+    //   address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
+    //   abi: abi,
+    //   functionName: 'startVestTimestamp',
+    // })) as number;
+
+    // console.log("_startVestTimestamp", _startVestTimestamp)
+
+    const _user = (await readContract({
       address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
       abi: abi,
-      functionName: 'getUserClaimable',
+      functionName: 'users',
       args: [address],
-    })) as number;
+    })) as User;
 
-    const decimals = (await readContract({
-      address: process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`,
-      abi: tokenAbi,
-      functionName: 'decimals',
-    })) as number;
+    console.log('user', _user);
 
-    const scalar = (await readContract({
-      address: process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`,
-      abi: tokenAbi,
-      functionName: 'SCALAR',
-    })) as number;
+    if (_user.length > 0) {
+      //if user has claimable get the claimable amount
+      if (_user[2] && _user[2] != 0) {
+        const _userClaimable = (await readContract({
+          address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
+          abi: abi,
+          functionName: 'getUserClaimable',
+          args: [address],
+        })) as number;
 
-    console.log('userClaimable', _userClaimable);
+        const decimals = (await readContract({
+          address: process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`,
+          abi: tokenAbi,
+          functionName: 'decimals',
+        })) as number;
 
-    setUserClaimable(
-      BigInt(_userClaimable) / BigInt(10 ** decimals) / BigInt(10 ** scalar)
-    );
+        const scalar = (await readContract({
+          address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
+          abi: abi,
+          functionName: 'SCALAR',
+        })) as number;
+
+        console.log('userClaimable', _userClaimable);
+
+        setUserClaimable(
+          Number(
+            BigInt(_userClaimable) /
+              (BigInt(10 ** decimals) * BigInt(10 ** scalar))
+          )
+        );
+      }
+    }
 
     setOwner(_owner as string);
     console.log('owner', _owner);
@@ -81,9 +109,8 @@ export default function Home() {
   });
 
   useEffect(() => {
-   
-    if (!account && account.isConnected) readContractData();
-  }, [isSuccess]);
+    //if (account && account.isConnected) readContractData();
+  }, [isSuccess, account]);
 
   return (
     <>
@@ -98,13 +125,17 @@ export default function Home() {
         direction='column'
         sx={{ p: 10 }}
       >
-        {address === owner && <UploadCSV />}
+        {address === owner && <Grid sx={{mb: 5}}> <UploadCSV /> </Grid>}
 
         <Grid item xs={12}>
           <Typography>Claimable: {Number(userClaimable)}</Typography>
         </Grid>
         <Grid item sx={{ mt: 2 }}>
-          <Button variant='contained' onClick={() => write?.()}>
+          <Button
+            variant='contained'
+            onClick={() => write?.()}
+            disabled={userClaimable === 0}
+          >
             Claim
           </Button>
         </Grid>

@@ -8,7 +8,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import CircularProgress from '@mui/material/CircularProgress';
-import { Button, Typography } from '@mui/material';
+import { Button, Typography, Grid } from '@mui/material';
 import {
   usePrepareContractWrite,
   useContractWrite,
@@ -148,10 +148,13 @@ const Upload = () => {
         <Button onClick={() => submitUsers()}>Submit Users</Button>
       )}
 
-      {isPrepareError ||
-        isError && (
-          <Typography>{(prepareError || error)?.message}</Typography>
-        )}
+      {(prepareError || error)?.message && (
+        <Grid sx={{ maxWidth: 500 }}>
+          <Typography sx={{ color: 'orangered', fontSize: 10 }}>
+            {(prepareError || error)?.message}
+          </Typography>
+        </Grid>
+      )}
     </div>
   );
 };
