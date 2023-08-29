@@ -28,6 +28,7 @@ export default function Home() {
   console.log('account', account);
 
   const readContractData = async () => {
+    console.log("NEXT_PUBLIC_CONTRACT_ADDRESS", process.env.NEXT_PUBLIC_CONTRACT_ADDRESS)
     const _owner = await readContract({
       address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS as `0x${string}`,
       abi: abi,
@@ -80,7 +81,8 @@ export default function Home() {
   });
 
   useEffect(() => {
-    readContractData();
+   
+    if (!account && account.isConnected) readContractData();
   }, [isSuccess]);
 
   return (
