@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import Papa from "papaparse";
+
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -14,53 +14,43 @@ import {
   useContractWrite,
   useWaitForTransaction,
 } from "wagmi";
-import { readContract } from "@wagmi/core";
-import abi from "../abi/linear-unlock-abi.json";
-import tokenAbi from "../abi/erc20.json";
+import ERC20ABI from "@/abi/erc20.json";
+import UNLOCK_ABI from "@/abi/linear-unlock-abi.json";
+import useCSVUpload from "@/hooks/useCSVUpload";
+import { CONTRACT_ADDRESS, TOKEN_ADDRESS } from "@/constants";
+import { csvToWriteData } from "@/utils";
 
 const Upload = () => {
-  const [uploading, setUploading] = useState(false);
-  const [csvData, setCsvData] = useState([]);
-  const [writeData, setWriteData] = useState([]);
-  const [writeApproveData, setWriteApproveData] = useState([]);
   const inputRef = useRef();
+  const { handleUploadCSV, csvUploading, csvData } = useCSVUpload(inputRef);
+  const [writeApproveData, setWriteApproveData] = useState<any[]>([]);
+  const [writeData, setWriteData] = useState<any[]>([]);
 
-  const handleUploadCSV = () => {
-    setUploading(true);
+  const submitUsers = async (csvData: any[]) => {
+    const [writeData, approveAmount] = csvToWriteData(csvData);
 
-    const input = inputRef?.current;
-    const reader = new FileReader();
-    //@ts-ignore
-    const [file] = input.files;
+    console.log("writeApproveData", [CONTRACT_ADDRESS, approveAmount]);
+    console.log("writeData", writeData);
 
-    reader.onloadend = ({ target }) => {
-      //@ts-ignore
-      const csv = Papa.parse(target.result, { header: true });
-      //@ts-ignore
-      setCsvData(csv?.data);
-
-      console.log("csv", csv);
-    };
-
-    reader.readAsText(file);
-    setUploading(false);
+    setWriteApproveData([CONTRACT_ADDRESS, approveAmount]);
+    setWriteData([writeData]);
   };
 
-  ///////////////////
+  // === APPROVE CONFIG === //
   const {
     config: approveConfig,
     error: approvePrepareError,
     isError: isApprovePrepareError,
   } = usePrepareContractWrite({
-    address: process.env.NEXT_PUBLIC_TOKEN_ADDRESS,
-    abi: tokenAbi,
+    address: TOKEN_ADDRESS,
+    abi: ERC20ABI,
     functionName: "approve",
     args: writeApproveData,
   });
 
   const {
     data: approveTxData,
-    write: writeApprove,
+    write: approveWrite,
     error: approveError,
     isError: isApproveError,
   } = useContractWrite(approveConfig);
@@ -70,84 +60,42 @@ const Upload = () => {
       hash: approveTxData?.hash,
     });
 
-  ///////////////////
+  // === WRITE CONFIG === //
   const {
     config: addUsersConfig,
     error: prepareError,
     isError: isPrepareError,
   } = usePrepareContractWrite({
-    address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
-    abi: abi,
+    address: CONTRACT_ADDRESS,
+    abi: UNLOCK_ABI,
     functionName: "addUsers",
     args: writeData,
   });
 
   const {
     data: addUsersTxData,
-    write,
-    error,
-    isError,
+    write: addUsersWrite,
+    error: addUsersError,
+    isError: isAddUsersError,
   } = useContractWrite(addUsersConfig);
 
-  const { isLoading, isSuccess } = useWaitForTransaction({
-    hash: addUsersTxData?.hash,
-  });
-
-  ///////////////////
-
-  const submitUsers = async () => {
-    const decimals = (await readContract({
-      address: process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`,
-      abi: tokenAbi,
-      functionName: "decimals",
-    })) as number;
-
-    console.log("decimals", decimals);
-
-    let _writeData = [];
-    let approveAmount = BigInt(0);
-    csvData.forEach((d) => {
-      let usrObj = {
-        userAddress: "",
-        claimed: BigInt(0),
-        claimable: BigInt(0),
-        lastClaimedTimestamp: 0,
-        endVestTimestamp: 0,
-      };
-      usrObj.userAddress = d.userAddress;
-      usrObj.claimable = BigInt(d.claimable) * BigInt(10 ** decimals);
-      approveAmount += usrObj.claimable;
-      usrObj.endVestTimestamp = Date.now() + Number(d.vestMonths * 2592000);
-      _writeData.push(usrObj);
+  const { isLoading: isAddUsersLoading, isSuccess: isAddUsersSuccess } =
+    useWaitForTransaction({
+      hash: addUsersTxData?.hash,
     });
-
-    console.log("writeApproveData", [
-      process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
-      approveAmount,
-    ]);
-    setWriteApproveData([
-      process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
-      approveAmount,
-    ]);
-
-    let temp = [];
-    temp.push(_writeData);
-    setWriteData(temp);
-
-    console.log(writeData);
-  };
 
   useEffect(() => {
     console.log("isApproveSuccess", isApproveSuccess);
     if (isApproveSuccess) {
       console.log("writing addUsers");
-      write?.();
+      addUsersWrite?.();
     }
   }, [isApproveSuccess]);
 
   useEffect(() => {
     console.log("writing approve");
-    writeApprove?.();
+    console.log(approveWrite);
+    approveWrite?.();
   }, [writeApproveData]);
 
   return (
@@ -156,17 +104,17 @@ const Upload = () => {
       <div className="mb-4">
         <input
           ref={inputRef}
-          disabled={uploading}
+          disabled={csvUploading}
           type="file"
           className="form-control"
         />
       </div>
       <button
         onClick={handleUploadCSV}
-        disabled={uploading}
+        disabled={csvUploading}
         className="btn btn-primary"
       >
-        {uploading ? "Uploading..." : "Upload"}
+        {csvUploading ? "Uploading..." : "Upload"}
       </button>
 
       {csvData.length > 0 && (
@@ -197,23 +145,23 @@ const Upload = () => {
         </TableContainer>
       )}
 
-      {isLoading || isApproveLoading ? (
+      {isAddUsersLoading || isApproveLoading ? (
         <CircularProgress />
       ) : (
-        <Button onClick={() => submitUsers()}>Submit Users</Button>
+        <Button onClick={() => submitUsers(csvData)}>Submit Users</Button>
       )}
 
-      {error?.message && (
-        <Grid sx={{ maxWidth: 500 }}>
-          <Typography sx={{ color: "orangered", fontSize: 10 }}>
-            {error?.message}
-          </Typography>
-        </Grid>
-      )}
+      {approveError?.message ||
+        (addUsersError?.message && (
+          <Grid sx={{ maxWidth: 500 }}>
+            <Typography sx={{ color: "orangered", fontSize: 10 }}>
+              {approveError?.message}
+              {addUsersError?.message}
+            </Typography>
+          </Grid>
+        ))}
     </div>
   );
 };
-
-Upload.propTypes = {};
 
 export default Upload;
