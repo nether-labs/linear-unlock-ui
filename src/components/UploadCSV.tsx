@@ -1,22 +1,22 @@
-import React, { useState, useRef, useEffect } from 'react';
-import Papa from 'papaparse';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import CircularProgress from '@mui/material/CircularProgress';
-import { Button, Typography, Grid } from '@mui/material';
+import React, { useState, useRef, useEffect } from "react";
+import Papa from "papaparse";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
+import CircularProgress from "@mui/material/CircularProgress";
+import { Button, Typography, Grid } from "@mui/material";
 import {
   usePrepareContractWrite,
   useContractWrite,
   useWaitForTransaction,
-} from 'wagmi';
-import { readContract } from '@wagmi/core';
-import abi from '../abi/linear-unlock-abi.json';
-import tokenAbi from '../abi/erc20.json';
+} from "wagmi";
+import { readContract } from "@wagmi/core";
+import abi from "../abi/linear-unlock-abi.json";
+import tokenAbi from "../abi/erc20.json";
 
 const Upload = () => {
   const [uploading, setUploading] = useState(false);
@@ -54,7 +54,7 @@ const Upload = () => {
   } = usePrepareContractWrite({
     address: process.env.NEXT_PUBLIC_TOKEN_ADDRESS,
     abi: tokenAbi,
-    functionName: 'approve',
+    functionName: "approve",
     args: writeApproveData,
   });
 
@@ -78,7 +78,7 @@ const Upload = () => {
   } = usePrepareContractWrite({
     address: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
     abi: abi,
-    functionName: 'addUsers',
+    functionName: "addUsers",
     args: writeData,
   });
 
@@ -99,16 +99,16 @@ const Upload = () => {
     const decimals = (await readContract({
       address: process.env.NEXT_PUBLIC_TOKEN_ADDRESS as `0x${string}`,
       abi: tokenAbi,
-      functionName: 'decimals',
+      functionName: "decimals",
     })) as number;
 
-    console.log('decimals', decimals);
+    console.log("decimals", decimals);
 
     let _writeData = [];
     let approveAmount = BigInt(0);
     csvData.forEach((d) => {
       let usrObj = {
-        userAddress: '',
+        userAddress: "",
         claimed: BigInt(0),
         claimable: BigInt(0),
         lastClaimedTimestamp: 0,
@@ -121,7 +121,10 @@ const Upload = () => {
       _writeData.push(usrObj);
     });
 
-    console.log("writeApproveData", [process.env.NEXT_PUBLIC_CONTRACT_ADDRESS, approveAmount]);
+    console.log("writeApproveData", [
+      process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
+      approveAmount,
+    ]);
     setWriteApproveData([
       process.env.NEXT_PUBLIC_CONTRACT_ADDRESS,
       approveAmount,
@@ -135,58 +138,58 @@ const Upload = () => {
   };
 
   useEffect(() => {
-    console.log('isApproveSuccess', isApproveSuccess);
+    console.log("isApproveSuccess", isApproveSuccess);
     if (isApproveSuccess) {
-      console.log('writing addUsers');
+      console.log("writing addUsers");
       write?.();
     }
   }, [isApproveSuccess]);
 
   useEffect(() => {
-    console.log("writing approve")
+    console.log("writing approve");
     writeApprove?.();
   }, [writeApproveData]);
 
   return (
     <div>
-      <h4 className='page-header mb-4'>Upload a CSV</h4>
-      <div className='mb-4'>
+      <h4 className="page-header mb-4">Upload a CSV</h4>
+      <div className="mb-4">
         <input
           ref={inputRef}
           disabled={uploading}
-          type='file'
-          className='form-control'
+          type="file"
+          className="form-control"
         />
       </div>
       <button
         onClick={handleUploadCSV}
         disabled={uploading}
-        className='btn btn-primary'
+        className="btn btn-primary"
       >
-        {uploading ? 'Uploading...' : 'Upload'}
+        {uploading ? "Uploading..." : "Upload"}
       </button>
 
       {csvData.length > 0 && (
         <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label='simple table'>
+          <Table sx={{ minWidth: 650 }} aria-label="simple table">
             <TableHead>
               <TableRow>
-                <TableCell align='right'>userAddress</TableCell>
-                <TableCell align='right'>claimable</TableCell>
-                <TableCell align='right'>vestMonths</TableCell>
+                <TableCell align="right">userAddress</TableCell>
+                <TableCell align="right">claimable</TableCell>
+                <TableCell align="right">vestMonths</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
               {csvData.map((d) => (
                 <TableRow
                   key={d.userAddress}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                  sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                 >
-                  <TableCell component='th' scope='row'>
+                  <TableCell component="th" scope="row">
                     {d.userAddress}
                   </TableCell>
-                  <TableCell align='right'>{d.claimable}</TableCell>
-                  <TableCell align='right'>{d.vestMonths}</TableCell>
+                  <TableCell align="right">{d.claimable}</TableCell>
+                  <TableCell align="right">{d.vestMonths}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
@@ -202,7 +205,7 @@ const Upload = () => {
 
       {error?.message && (
         <Grid sx={{ maxWidth: 500 }}>
-          <Typography sx={{ color: 'orangered', fontSize: 10 }}>
+          <Typography sx={{ color: "orangered", fontSize: 10 }}>
             {error?.message}
           </Typography>
         </Grid>
