@@ -12,7 +12,9 @@ const Layout = ({ children }: PropsWithChildren) => (
         <Stack direction="row" sx={{ bgcolor: "secondary.main", py: 2, px: 4, borderBottom: "1px solid", borderColor: "lightPurple.main" }} alignItems="center">
             <Image src={netherLogo} height={"40"} width={"160"} alt="Nether Logo" />
             <Stack flexGrow={1} />
-            <Web3Button />
+            <Box className="connectButton">
+                <Web3Button />
+            </Box>
 
         </Stack>
         <Stack direction="column">

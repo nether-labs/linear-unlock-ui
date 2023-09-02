@@ -97,7 +97,7 @@ const Claim: React.FC<IClaimProps> = (props) => {
                     }}>Having issues? <br />Reach out to us on <Link sx={{
                       color: "pink",
                       fontWeight: 500,
-                    }} href="https://discord.gg/netherlabs"> Discord</Link> for support. </Typography>
+                    }} target="__new" href="https://discord.gg/netherlabs"> Discord</Link> for support. </Typography>
                   </Box>
                 </Stack>
               </>) : <Box textAlign="center"> <Typography onClick={() => {

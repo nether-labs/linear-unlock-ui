@@ -39,7 +39,13 @@ export default function App({ Component, pageProps }: any) {
             </Layout>
           </Box>
         </WagmiConfig>
-        <Web3Modal projectId={projectId} ethereumClient={ethereumClient} />
+        <Web3Modal projectId={projectId} ethereumClient={ethereumClient}                //@ts-ignore
+          themeMode="dark"
+          themeVariables={{
+            '--w3m-font-family': 'Roboto, sans-serif',
+            '--w3m-accent-color': '#730DE7',
+            "--w3m-background-color": "#2e1d4b",
+          }} />
       </Experimental_CssVarsProvider>
     </>
   );
