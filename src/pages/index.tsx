@@ -3,8 +3,8 @@ import * as React from "react";
 import { Web3Button } from "@web3modal/react";
 
 import UploadCSV from "../components/UploadCSV";
-import useVestingContract from "@/hooks/useVestingContract";
-import Claim from "@/components/Claim";
+import useVestingContract from "hooks/useVestingContract";
+import Claim from "components/Claim";
 
 export default function Home() {
   const {
@@ -17,10 +17,6 @@ export default function Home() {
 
   return (
     <>
-      <Grid container justifyContent="end" sx={{ p: 2 }}>
-        <Web3Button />
-      </Grid>
-
       <Grid
         container
         justifyContent="center"

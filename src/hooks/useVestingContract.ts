@@ -1,10 +1,9 @@
+import { readContract } from "@wagmi/core";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import { readContract } from "@wagmi/core";
 
-import UNLOCK_ABI from "@/abi/linear-unlock-abi.json";
-import ERC20ABI from "@/abi/erc20.json";
-import { CONTRACT_ADDRESS, DECIMALS, SCALAR, TOKEN_ADDRESS } from "@/constants";
+import UNLOCK_ABI from "abi/linear-unlock-abi.json";
+import { CONTRACT_ADDRESS, SCALAR } from "constants";
 
 export type User = [string, bigint, bigint, bigint, bigint];
 

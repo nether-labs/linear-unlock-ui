@@ -14,11 +14,11 @@ import {
   useContractWrite,
   useWaitForTransaction,
 } from "wagmi";
-import ERC20ABI from "@/abi/erc20.json";
-import UNLOCK_ABI from "@/abi/linear-unlock-abi.json";
-import useCSVUpload from "@/hooks/useCSVUpload";
-import { CONTRACT_ADDRESS, TOKEN_ADDRESS } from "@/constants";
-import { csvToWriteData } from "@/utils";
+import ERC20ABI from "abi/erc20.json";
+import UNLOCK_ABI from "abi/linear-unlock-abi.json";
+import useCSVUpload from "hooks/useCSVUpload";
+import { CONTRACT_ADDRESS, TOKEN_ADDRESS } from "constants";
+import { csvToWriteData } from "utils";
 
 const Upload = () => {
   const inputRef = useRef();
