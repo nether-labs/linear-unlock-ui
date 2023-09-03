@@ -1,0 +1,31 @@
+html,
+#__next,
+body {
+  padding: 0;
+  margin: 0;
+  height: 100% !important;
+  background-color: #110c1e;
+  color: whitesmoke;
+  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
+    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+
+  letter-spacing: 0.05rem;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/Inter/Inter-VariableFont_slntwght.ttf");
+}
+
+.connectButton button {
+  background: "purple";
+}
