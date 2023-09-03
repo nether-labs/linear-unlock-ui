@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 
 import UNLOCK_ABI from "abi/linear-unlock-abi.json";
-import { CONTRACT_ADDRESS, SCALAR } from "constants";
+import { CONTRACT_ADDRESS, SCALAR } from "contract_constants";
 
 export type User = [string, bigint, bigint, bigint, bigint];
 

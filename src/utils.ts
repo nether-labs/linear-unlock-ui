@@ -1,5 +1,4 @@
-import { DECIMALS } from "./constants";
-import { User } from "./hooks/useVestingContract";
+import { DECIMALS } from "./contract_constants";
 
 export const weiToLocaleString = (number: bigint, decimals: number) => {
   return (Number(number) / 10 ** decimals).toLocaleString(undefined, {

@@ -17,8 +17,8 @@ import {
 import ERC20ABI from "abi/erc20.json";
 import UNLOCK_ABI from "abi/linear-unlock-abi.json";
 import useCSVUpload from "hooks/useCSVUpload";
-import { CONTRACT_ADDRESS, TOKEN_ADDRESS } from "constants";
 import { csvToWriteData } from "utils";
+import { CONTRACT_ADDRESS, TOKEN_ADDRESS } from "contract_constants";
 
 const Upload = () => {
   const inputRef = useRef();

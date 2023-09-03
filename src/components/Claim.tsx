@@ -1,6 +1,5 @@
 import { Grid, Typography, Button, Paper, Box, Stack, Link } from "@mui/material";
 import * as React from "react";
-import { CONTRACT_ADDRESS, DECIMALS } from "constants";
 import { weiToLocaleString } from "utils";
 import {
   useAccount,
@@ -12,6 +11,7 @@ import {
 import UNLOCK_ABI from "abi/linear-unlock-abi.json";
 import Image from "next/image";
 import { useWeb3Modal } from "@web3modal/react";
+import { CONTRACT_ADDRESS, DECIMALS } from "contract_constants";
 
 interface IClaimProps {
   userClaimableAmount: bigint;
