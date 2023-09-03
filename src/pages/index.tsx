@@ -5,6 +5,7 @@ import { Web3Button } from "@web3modal/react";
 import UploadCSV from "../components/UploadCSV";
 import useVestingContract from "hooks/useVestingContract";
 import Claim from "components/Claim";
+import Head from "next/head";
 
 export default function Home() {
   const {
@@ -17,6 +18,10 @@ export default function Home() {
 
   return (
     <>
+      <Head>
+        <title>NFI Token Claim</title>
+        <meta name="description" content="Claim your vested NFI Tokens" />
+      </Head>
       <Grid
         container
         justifyContent="center"
