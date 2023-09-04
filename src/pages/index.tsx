@@ -14,6 +14,8 @@ export default function Home() {
     userTotalClaimedAmount,
     userTotalVestedAmount,
     userEndVestTimestamp,
+    switchChain,
+    desiredChain,
   } = useVestingContract();
 
   return (
@@ -29,18 +31,21 @@ export default function Home() {
         direction="column"
         sx={{ p: 10 }}
       >
-        {userIsOwner && (
-          <Grid sx={{ mb: 5 }}>
-            <UploadCSV />
-          </Grid>
-        )}
-
-        <Claim
-          userClaimableAmount={userClaimableAmount}
-          userTotalClaimedAmount={userTotalClaimedAmount}
-          userTotalVestedAmount={userTotalVestedAmount}
-          userEndVestTimestamp={userEndVestTimestamp}
-        />
+        <>
+          {userIsOwner && (
+            <Grid sx={{ mb: 5 }}>
+              <UploadCSV />
+            </Grid>
+          )}
+          <Claim
+            userClaimableAmount={userClaimableAmount}
+            userTotalClaimedAmount={userTotalClaimedAmount}
+            userTotalVestedAmount={userTotalVestedAmount}
+            userEndVestTimestamp={userEndVestTimestamp}
+            switchChain={switchChain}
+            desiredChain={desiredChain}
+          />
+        </>
       </Grid>
     </>
   );

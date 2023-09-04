@@ -1,11 +1,13 @@
 import { readContract } from "@wagmi/core";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId, useNetwork, useSwitchNetwork } from "wagmi";
 
 import UNLOCK_ABI from "abi/linear-unlock-abi.json";
 import { CONTRACT_ADDRESS, SCALAR } from "contract_constants";
 
 export type User = [string, bigint, bigint, bigint, bigint];
+
+const DESIRED_CHAIN_ID = 8453; // base mainnet
 
 const useVestingContract = () => {
   // owner data
@@ -19,18 +21,36 @@ const useVestingContract = () => {
   const [userEndVestTimestamp, setUserEndVestTimestamp] = useState<number>(0);
   const [updating, setUpdating] = useState(false);
 
+  const [desiredChain, setDesiredChain] = useState(false);
+
   const { address, isConnected } = useAccount();
+  const { switchNetwork } = useSwitchNetwork({
+    chainId: DESIRED_CHAIN_ID,
+  });
+  const { chain } = useNetwork();
 
   useEffect(() => {
     if (!isConnected) return;
+    if (chain.id !== DESIRED_CHAIN_ID) return;
+
     console.log("Getting initial data");
     getInitialData();
 
     // update claimable amount periodically (5s)
     const interval = setInterval(updateUser, 5000);
-
     return () => clearInterval(interval);
-  }, [isConnected]);
+  }, [isConnected, chain, address]);
+
+  useEffect(() => {
+    if (!chain) return;
+    console.log("chainId", chain.id);
+    setDesiredChain(chain.id === DESIRED_CHAIN_ID);
+  }, [chain]);
+
+  const switchChain = () => {
+    if (!switchNetwork) return;
+    switchNetwork?.(DESIRED_CHAIN_ID);
+  };
 
   const getInitialData = async () => {
     _getOwner();
@@ -104,6 +124,8 @@ const useVestingContract = () => {
     userTotalVestedAmount,
     userEndVestTimestamp,
     updateUser,
+    switchChain,
+    desiredChain,
   };
 };
 

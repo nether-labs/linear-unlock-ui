@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -8,7 +8,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import CircularProgress from "@mui/material/CircularProgress";
-import { Button, Typography, Grid } from "@mui/material";
+import { Button, Typography, Grid, Stack } from "@mui/material";
 import {
   usePrepareContractWrite,
   useContractWrite,
@@ -17,24 +17,71 @@ import {
 import ERC20ABI from "abi/erc20.json";
 import UNLOCK_ABI from "abi/linear-unlock-abi.json";
 import useCSVUpload from "hooks/useCSVUpload";
-import { csvToWriteData } from "utils";
-import { CONTRACT_ADDRESS, TOKEN_ADDRESS } from "contract_constants";
+import {
+  CONTRACT_ADDRESS,
+  DECIMALS,
+  TOKEN_ADDRESS,
+  START_VEST_TIMESTAMP,
+} from "contract_constants";
+import { weiToLocaleString } from "utils";
+import useTokenAllowance from "hooks/useTokenAllowance";
+
+const csvToWriteData = (csvData: any[]): [any[], bigint] => {
+  let approveAmount = BigInt(0);
+
+  const userData = csvData.reduce((acc, curr) => {
+    const { userAddress, claimable, vestMonths } = curr;
+    const claimableAmount = BigInt(claimable) * BigInt(10 ** DECIMALS);
+    approveAmount += claimableAmount;
+    const endVestTimestamp =
+      START_VEST_TIMESTAMP + Number(vestMonths * 60 * 60 * 24 * 30);
+
+    // if user already exists, add to their claimable amount
+    if (acc[userAddress]) {
+      acc[userAddress].claimable += claimableAmount;
+      return acc;
+    }
+
+    return {
+      ...acc,
+      [userAddress]: {
+        userAddress,
+        claimed: BigInt(0),
+        claimable: claimableAmount,
+        lastClaimedTimestamp: 0,
+        endVestTimestamp,
+      },
+    };
+  }, {});
+
+  // convert object to array
+  const writeData = Object.values(userData);
+  return [writeData, approveAmount];
+};
 
 const Upload = () => {
   const inputRef = useRef();
   const { handleUploadCSV, csvUploading, csvData } = useCSVUpload(inputRef);
   const [writeApproveData, setWriteApproveData] = useState<any[]>([]);
   const [writeData, setWriteData] = useState<any[]>([]);
+  const { allowance } = useTokenAllowance(CONTRACT_ADDRESS);
+  const [canSubmit, setCanSubmit] = useState(false);
 
-  const submitUsers = async (csvData: any[]) => {
-    const [writeData, approveAmount] = csvToWriteData(csvData);
+  useEffect(() => {
+    if (!csvData.length) return;
+    const [userData, amount] = csvToWriteData(csvData);
+    setWriteApproveData([CONTRACT_ADDRESS, amount]);
+    setWriteData(userData);
+  }, [csvData]);
 
-    console.log("writeApproveData", [CONTRACT_ADDRESS, approveAmount]);
+  useEffect(() => {
+    if (!writeApproveData.length) return;
+    console.log("canSubmit", writeApproveData[1] <= allowance);
     console.log("writeData", writeData);
+    if (allowance <= 0n) return;
 
-    setWriteApproveData([CONTRACT_ADDRESS, approveAmount]);
-    setWriteData([writeData]);
-  };
+    setCanSubmit(writeApproveData[1] <= allowance);
+  }, [allowance, writeApproveData]);
 
   // === APPROVE CONFIG === //
   const {
@@ -69,7 +116,7 @@ const Upload = () => {
     address: CONTRACT_ADDRESS,
     abi: UNLOCK_ABI,
     functionName: "addUsers",
-    args: writeData,
+    args: [writeData],
   });
 
   const {
@@ -84,19 +131,39 @@ const Upload = () => {
       hash: addUsersTxData?.hash,
     });
 
-  useEffect(() => {
-    console.log("isApproveSuccess", isApproveSuccess);
-    if (isApproveSuccess) {
-      console.log("writing addUsers");
-      addUsersWrite?.();
-    }
-  }, [isApproveSuccess]);
+  // useEffect(() => {
+  //   console.log("isApproveSuccess", isApproveSuccess);
+  //   if (isApproveSuccess) {
+  //     console.log("writing addUsers");
+  //     addUsersWrite?.();
+  //   }
+  // }, [isApproveSuccess]);
 
-  useEffect(() => {
+  // useEffect(() => {
+  //   console.log("isPrepareError", isPrepareError);
+  //   console.log("prepareError", prepareError);
+  // }, [prepareError]);
+
+  const approve = async () => {
+    if (!approveWrite) return;
+    if (!writeApproveData.length || !writeData.length) return;
     console.log("writing approve");
-    console.log(approveWrite);
     approveWrite?.();
-  }, [writeApproveData]);
+  };
+
+  const submit = async () => {
+    if (!canSubmit) return;
+    if (!writeApproveData.length || !writeData.length) return;
+    console.log("isAddUsersError", isAddUsersError);
+    if (isAddUsersError) {
+      console.log("addUsersError", addUsersError);
+      return;
+    }
+
+    console.log("writing addUsers");
+    console.log(writeData);
+    addUsersWrite?.();
+  };
 
   return (
     <div>
@@ -130,7 +197,7 @@ const Upload = () => {
             <TableBody>
               {csvData.map((d) => (
                 <TableRow
-                  key={d.userAddress}
+                  key={`${d.userAddress}-${d.claimable}`}
                   sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
                 >
                   <TableCell component="th" scope="row">
@@ -148,14 +215,41 @@ const Upload = () => {
       {isAddUsersLoading || isApproveLoading ? (
         <CircularProgress />
       ) : (
-        <Button onClick={() => submitUsers(csvData)}>Submit Users</Button>
+        <Stack direction={"row"} gap={2}>
+          <Button onClick={() => approve()}>Approve Tokens</Button>
+          <Button onClick={() => submit()} disabled={!canSubmit}>
+            Submit Users
+          </Button>
+        </Stack>
       )}
+
+      {writeData.length > 0 && (
+        <Stack direction={"row"} gap={2}>
+          <Typography>Total tokens</Typography>
+          <Typography>
+            {weiToLocaleString(writeApproveData[1], DECIMALS)}
+          </Typography>
+        </Stack>
+      )}
+
+      <Stack direction={"column"}>
+        <Stack direction="row" gap={2}>
+          <Typography>Approved?</Typography>
+          <Typography>{isApproveSuccess ? "Yes" : "No"}</Typography>
+        </Stack>
+        <Stack direction="row" gap={2}>
+          <Typography>Added Users?</Typography>
+          <Typography>{isAddUsersSuccess ? "Yes" : "No"}</Typography>
+        </Stack>
+      </Stack>
 
       {approveError?.message ||
         (addUsersError?.message && (
           <Grid sx={{ maxWidth: 500 }}>
             <Typography sx={{ color: "orangered", fontSize: 10 }}>
               {approveError?.message}
+            </Typography>
+            <Typography sx={{ color: "orangered", fontSize: 10 }}>
               {addUsersError?.message}
             </Typography>
           </Grid>
