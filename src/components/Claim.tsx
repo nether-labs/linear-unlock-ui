@@ -6,6 +6,7 @@ import {
   Box,
   Stack,
   Link,
+  CircularProgress,
 } from "@mui/material";
 import * as React from "react";
 import { toLocaleDateTimeString, weiToLocaleString } from "utils";
@@ -74,16 +75,16 @@ const Claim: React.FC<IClaimProps> = (props) => {
     error: claimError,
     isError: isClaimError,
   } = useContractWrite(claimConfig);
-  const { isLoading: isClaimLoading, isSuccess: isSuccessLoading } =
-    useWaitForTransaction({
-      hash: claimData?.hash,
-    });
+  const {
+    isLoading: isClaimLoading,
+    isSuccess: isClaimSuccess,
+    status,
+  } = useWaitForTransaction({
+    hash: claimData?.hash,
+  });
 
   const { isConnected } = useAccount();
-
   const { open } = useWeb3Modal();
-
-  // console.log("claimWrite", claimWrite);
 
   return (
     <>
@@ -219,14 +220,24 @@ const Claim: React.FC<IClaimProps> = (props) => {
       </Box>
       <Grid item sx={{ mt: 2 }}>
         {isConnected && (
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => claimWrite?.()}
-            disabled={props.userClaimableAmount === 0n}
-          >
-            Claim
-          </Button>
+          <>
+            <Button
+              variant="contained"
+              color={"primary"}
+              onClick={() => claimWrite?.()}
+              disabled={props.userClaimableAmount === 0n}
+            >
+              {isClaimLoading ? (
+                <CircularProgress
+                  color="info"
+                  size={"1.4rem"}
+                  sx={{ height: "100%", width: "100%" }}
+                />
+              ) : (
+                "CLAIM"
+              )}
+            </Button>
+          </>
         )}
       </Grid>
     </>

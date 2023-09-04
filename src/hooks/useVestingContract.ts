@@ -8,6 +8,7 @@ import { CONTRACT_ADDRESS, SCALAR } from "contract_constants";
 export type User = [string, bigint, bigint, bigint, bigint];
 
 const DESIRED_CHAIN_ID = 8453; // base mainnet
+// const DESIRED_CHAIN_ID = 84531; // base goerli
 
 const useVestingContract = () => {
   // owner data

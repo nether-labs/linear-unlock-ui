@@ -8,12 +8,12 @@ import {
 } from "@web3modal/ethereum";
 import { Web3Modal } from "@web3modal/react";
 import { configureChains, createConfig, WagmiConfig } from "wagmi";
-import { mainnet, base } from "wagmi/chains";
+import { mainnet, base, baseGoerli } from "wagmi/chains";
 import { Box, Experimental_CssVarsProvider, Stack } from "@mui/material";
 import "styles/globals.scss";
 import Image from "next/image";
 import Layout from "components/Layout";
-const chains = [base];
+const chains = [base, baseGoerli];
 const projectId = "83fde4ab80cf5b97cff4927c19d25825";
 
 const { publicClient } = configureChains(chains, [w3mProvider({ projectId })]);
