@@ -1,6 +1,12 @@
 import { readContract } from "@wagmi/core";
 import { useEffect, useState } from "react";
-import { useAccount, useChainId, useNetwork, useSwitchNetwork } from "wagmi";
+import {
+  useAccount,
+  useBlockNumber,
+  useChainId,
+  useNetwork,
+  useSwitchNetwork,
+} from "wagmi";
 
 import UNLOCK_ABI from "abi/linear-unlock-abi.json";
 import { CONTRACT_ADDRESS, SCALAR } from "contract_constants";
@@ -11,6 +17,7 @@ const DESIRED_CHAIN_ID = 8453; // base mainnet
 // const DESIRED_CHAIN_ID = 84531; // base goerli
 
 const useVestingContract = () => {
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
   // owner data
   const [owner, setOwner] = useState("");
   const [userIsOwner, setUserIsOwner] = useState(false);
@@ -23,12 +30,25 @@ const useVestingContract = () => {
   const [updating, setUpdating] = useState(false);
 
   const [desiredChain, setDesiredChain] = useState(false);
+  const [blockNumber, setBlockNumber] = useState(0n);
+  const [previousBlockNumber, setPreviousBlockNumber] = useState(0n);
 
   const { address, isConnected } = useAccount();
   const { switchNetwork } = useSwitchNetwork({
     chainId: DESIRED_CHAIN_ID,
   });
   const { chain } = useNetwork();
+  const { data } = useBlockNumber({
+    watch: true,
+    onBlock(blockNumber) {
+      // console.log("blockNumber", blockNumber);
+      setBlockNumber(blockNumber);
+    },
+  });
+
+  useEffect(() => {
+    console.log({ data });
+  }, [data]);
 
   useEffect(() => {
     if (!isConnected) return;
@@ -37,9 +57,9 @@ const useVestingContract = () => {
     console.log("Getting initial data");
     getInitialData();
 
-    // update claimable amount periodically (5s)
-    const interval = setInterval(updateUser, 5000);
-    return () => clearInterval(interval);
+    // // update claimable amount periodically (5s)
+    // const interval = setInterval(updateUser, 5000);
+    // return () => clearInterval(interval);
   }, [isConnected, chain, address]);
 
   useEffect(() => {
@@ -48,14 +68,25 @@ const useVestingContract = () => {
     setDesiredChain(chain.id === DESIRED_CHAIN_ID);
   }, [chain]);
 
+  // useEffect(() => {
+  //   if (!initialDataLoaded) return;
+
+  //   // if new blocknumber ishigher thn previous, update user
+  //   if (blockNumber > previousBlockNumber) {
+  //     // updateUser();
+  //     console.log("updating user at block", blockNumber);
+  //     updateUser().then(() => setPreviousBlockNumber(blockNumber));
+  //   }
+  // }, [blockNumber, initialDataLoaded]);
+
   const switchChain = () => {
     if (!switchNetwork) return;
     switchNetwork?.(DESIRED_CHAIN_ID);
   };
 
   const getInitialData = async () => {
-    _getOwner();
-    _getUser();
+    await Promise.all([_getOwner(), _getUser()]);
+    setInitialDataLoaded(true);
   };
 
   const _getOwner = async () => {
@@ -127,6 +158,7 @@ const useVestingContract = () => {
     updateUser,
     switchChain,
     desiredChain,
+    blockNumber,
   };
 };
 
