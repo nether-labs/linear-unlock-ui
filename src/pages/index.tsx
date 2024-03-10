@@ -56,19 +56,19 @@ export default function Home() {
                 >
                   <Typography variant="h4" fontWeight={500}>
                     {" "}
-                    Vesting has ended
+                    {"Vesting has ended"}
                   </Typography>
                 </Stack>
                 <Box>
                   <Typography variant="body1" paragraph>
-                    Token vesting is now complete. If you haven't claimed all your tokens yet, the remainder will be
+                    Token vesting is now complete. If you have not claimed all your tokens yet, the remainder will be
                     airdropped to your wallet momentarily. No further action is required.
                   </Typography>
                   <Typography variant="body1" paragraph>
                     {"Thank you for your participation in the pre-seed and seed rounds <3"}
                   </Typography>
                   <Typography variant="caption" paragraph>
-                    If you have any questions, please reach out to us on our{" "}
+                    {"If you have any questions, please reach out to us on our"}{" "}
                     <Link
                       href="https://discord.gg/netherlabs"
                       target="_blank"
